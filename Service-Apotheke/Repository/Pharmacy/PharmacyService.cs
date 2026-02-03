@@ -28,6 +28,9 @@ namespace Service_Apotheke.Repository.Pharmacy
                 pharmacy.PharmacyName,
                 pharmacy.Email,
                 pharmacy.Phone,
+                pharmacy.Country,
+                pharmacy.LicenseNumber,
+                
                 pharmacy.Address,
                 pharmacy.IsVerified,
                 Posts = pharmacy.JobPosts.Select(jp => new {

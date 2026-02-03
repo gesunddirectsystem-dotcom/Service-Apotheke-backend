@@ -4,6 +4,7 @@ using Service_Apotheke.Repository.Job;
 
 namespace ServiceApothekeAPI.Controllers
 {
+    
     [Route("api/[controller]")]
     [ApiController]
     public class NotificationController : ControllerBase
@@ -28,6 +29,7 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [Authorize]
 
         [HttpPut("mark-read/{notificationId}")]
         public async Task<IActionResult> MarkAsRead(int notificationId)

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Service_Apotheke;
 using Service_Apotheke.Repository.Auth;
 using Service_Apotheke.Repository.Pharmacy;
@@ -6,6 +7,7 @@ using ServiceApothekeAPI;
 
 namespace ServiceApothekeAPI.Controllers
 {
+  
     [Route("api/[controller]")]
     [ApiController]
     public class PharmacyController : ControllerBase
@@ -63,7 +65,7 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
+        [Authorize]
         [HttpGet("{id}/full-details")]
         public async Task<IActionResult> GetPharmacyFullDetails(Guid id)
         {
@@ -98,7 +100,7 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePharmacy(Guid id, [FromBody] UpdatePharmacyDto dto)
         {

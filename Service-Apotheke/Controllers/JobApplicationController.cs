@@ -5,6 +5,7 @@ using ServiceApothekeAPI;
 
 namespace ServiceApothekeAPI.Controllers
 {
+   
     [Route("api/[controller]")]
     [ApiController]
     public class JobApplicationController : ControllerBase

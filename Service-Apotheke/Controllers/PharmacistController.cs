@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service_Apotheke.Repository.Auth;
 using Service_Apotheke.Repository.Pharmacist;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ServiceApothekeAPI.Controllers
 {
+   
     [Route("api/[controller]")]
     [ApiController]
     public class PharmacistController : ControllerBase
@@ -19,6 +21,7 @@ namespace ServiceApothekeAPI.Controllers
             _pharmacistService = pharmacistService;
             _authService = authService;
         }
+
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] PharmacistRegDto dto)
@@ -64,7 +67,7 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProfile([FromRoute] Guid id, [FromBody] UpdatePharmacistDto dto)
         {
@@ -84,6 +87,7 @@ namespace ServiceApothekeAPI.Controllers
 
         [HttpPost("{id}/upload-cv")]
         [Consumes("multipart/form-data")]
+        [Authorize]
         public async Task<IActionResult> UploadCV([FromRoute] Guid id, [FromForm] UploadCvDto dto)
         {
             if (dto.File == null || dto.File.Length == 0)
@@ -120,7 +124,7 @@ namespace ServiceApothekeAPI.Controllers
             var shifts = await _pharmacistService.GetCompletedShifts(id);
             return Ok(shifts);
         }
-
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProfile(Guid id)
         {
@@ -164,7 +168,7 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
+        [Authorize]
         [HttpPut("shifts/{shiftId}/complete")]
         public async Task<IActionResult> CompleteShift(Guid shiftId, [FromBody] CompleteShiftDto dto)
         {
@@ -180,7 +184,7 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
+        [Authorize]
         [HttpGet("{id}/notifications")]
         public async Task<IActionResult> GetNotifications(Guid id)
         {

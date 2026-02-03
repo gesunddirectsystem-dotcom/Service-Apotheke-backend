@@ -5,6 +5,7 @@ using ServiceApothekeAPI;
 
 namespace ServiceApothekeAPI.Controllers
 {
+    
     [Route("api/[controller]")]
     [ApiController]
     public class JobPostController : ControllerBase
@@ -72,7 +73,7 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateJobPostStatus(Guid id, [FromBody] UpdateStatusDto dto)
         {
