@@ -3,6 +3,7 @@ using Service_Apotheke;
 using Service_Apotheke.Repository.Auth;
 using Service_Apotheke.Repository.Pharmacy;
 using ServiceApothekeAPI;
+
 namespace ServiceApothekeAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -53,7 +54,7 @@ namespace ServiceApothekeAPI.Controllers
             {
                 var result = await _authService.LoginPharmacy(dto);
                 if (result == null)
-                    return Unauthorized("Invalid email or password");
+                    return Unauthorized("Ungültige E-Mail oder Passwort");
 
                 return Ok(result);
             }
@@ -67,9 +68,37 @@ namespace ServiceApothekeAPI.Controllers
         public async Task<IActionResult> GetPharmacyFullDetails(Guid id)
         {
             var result = await _pharmacyService.GetPharmacyFullDetails(id);
-            if (result == null) return NotFound("Pharmacy not found");
+            if (result == null) return NotFound("Apotheke nicht gefunden");
             return Ok(result);
         }
+        [HttpPost("forget-password")]
+        public async Task<IActionResult> ForgetPassword([FromBody] ForgetPasswordDto dto)
+        {
+            try
+            {
+                var result = await _authService.ForgetPharmacyPassword(dto.Email);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            try
+            {
+                var result = await _authService.ResetPharmacyPassword(dto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePharmacy(Guid id, [FromBody] UpdatePharmacyDto dto)
         {
@@ -77,9 +106,9 @@ namespace ServiceApothekeAPI.Controllers
             {
                 var result = await _pharmacyService.UpdatePharmacy(id, dto);
                 if (!result)
-                    return BadRequest("Pharmacy not found or update failed");
+                    return BadRequest("Apotheke nicht gefunden oder Aktualisierung fehlgeschlagen");
 
-                return Ok("Pharmacy updated successfully");
+                return Ok("Apotheke erfolgreich aktualisiert");
             }
             catch (Exception ex)
             {

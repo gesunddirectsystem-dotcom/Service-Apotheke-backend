@@ -2,11 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Service_Apotheke.Repository.Job;
 using ServiceApothekeAPI;
+
 namespace ServiceApothekeAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-          
     public class JobApplicationController : ControllerBase
     {
         private readonly IJobService _jobService;

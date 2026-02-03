@@ -146,6 +146,72 @@ namespace Service_Apotheke.Repository.Auth
                 IsVerified = pharmacy.IsVerified
             };
         }
+        public async Task<string> ForgetPharmacistPassword(string email)
+        {
+            var pharmacist = await _context.Pharmacists
+                .FirstOrDefaultAsync(p => p.Email == email);
+
+            if (pharmacist == null)
+                throw new Exception("Email not found");
+
+            pharmacist.ConfirmationCode = GenerateConfirmationCode();
+            await _context.SaveChangesAsync();
+
+            await _emailService.SendConfirmationEmail(email, pharmacist.ConfirmationCode);
+
+            return "Reset password code sent to email";
+        }
+        public async Task<string> ResetPharmacistPassword(ResetPasswordDto dto)
+        {
+            var pharmacist = await _context.Pharmacists
+                .FirstOrDefaultAsync(p => p.Email == dto.Email);
+
+            if (pharmacist == null)
+                throw new Exception("Pharmacist not found");
+
+            if (pharmacist.ConfirmationCode != dto.Code)
+                throw new Exception("Invalid reset code");
+
+            pharmacist.PasswordHash = HashPassword(dto.NewPassword);
+            pharmacist.ConfirmationCode = string.Empty;
+
+            await _context.SaveChangesAsync();
+
+            return "Password reset successfully";
+        }
+        public async Task<string> ForgetPharmacyPassword(string email)
+        {
+            var pharmacy = await _context.Pharmacies
+                .FirstOrDefaultAsync(p => p.Email == email);
+
+            if (pharmacy == null)
+                throw new Exception("Email not found");
+
+            pharmacy.ConfirmationCode = GenerateConfirmationCode();
+            await _context.SaveChangesAsync();
+
+            await _emailService.SendConfirmationEmail(email, pharmacy.ConfirmationCode);
+
+            return "Reset password code sent to email";
+        }
+        public async Task<string> ResetPharmacyPassword(ResetPasswordDto dto)
+        {
+            var pharmacy = await _context.Pharmacies
+                .FirstOrDefaultAsync(p => p.Email == dto.Email);
+
+            if (pharmacy == null)
+                throw new Exception("Pharmacy not found");
+
+            if (pharmacy.ConfirmationCode != dto.Code)
+                throw new Exception("Invalid reset code");
+
+            pharmacy.PasswordHash = HashPassword(dto.NewPassword);
+            pharmacy.ConfirmationCode = string.Empty;
+
+            await _context.SaveChangesAsync();
+
+            return "Password reset successfully";
+        }
 
 
         public async Task<string> VerifyPharmacyEmail(VerifyDto dto)

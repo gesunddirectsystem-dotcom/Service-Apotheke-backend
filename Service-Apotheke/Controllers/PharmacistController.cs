@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Service_Apotheke.Repository.Auth;
 using Service_Apotheke.Repository.Pharmacist;
-using ServiceApothekeAPI;
+using System;
+using System.Threading.Tasks;
+
 namespace ServiceApothekeAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -54,7 +55,7 @@ namespace ServiceApothekeAPI.Controllers
             {
                 var result = await _authService.LoginPharmacist(dto);
                 if (result == null)
-                    return Unauthorized("Invalid email or password");
+                    return Unauthorized("Ungültige E-Mail oder Passwort");
 
                 return Ok(result);
             }
@@ -63,18 +64,17 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
-      
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] UpdatePharmacistDto dto)
+        public async Task<IActionResult> UpdateProfile([FromRoute] Guid id, [FromBody] UpdatePharmacistDto dto)
         {
             try
             {
                 var result = await _pharmacistService.UpdateProfile(id, dto);
                 if (!result)
-                    return BadRequest("Pharmacist not found or update failed");
+                    return BadRequest("Apotheker nicht gefunden oder Aktualisierung fehlgeschlagen");
 
-                return Ok("Profile updated successfully");
+                return Ok("Profil erfolgreich aktualisiert");
             }
             catch (Exception ex)
             {
@@ -82,16 +82,16 @@ namespace ServiceApothekeAPI.Controllers
             }
         }
 
-
         [HttpPost("{id}/upload-cv")]
-        public async Task<IActionResult> UploadCV(Guid id, [FromForm] IFormFile file)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadCV([FromRoute] Guid id, [FromForm] UploadCvDto dto)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("لم يتم اختيار ملف");
+            if (dto.File == null || dto.File.Length == 0)
+                return BadRequest("Keine Datei ausgewählt");
 
             try
             {
-                var result = await _pharmacistService.UploadCV(id, file);
+                var result = await _pharmacistService.UploadCV(id, dto.File);
                 return Ok(new { path = result });
             }
             catch (Exception ex)
@@ -99,6 +99,7 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         [HttpGet("{id}/all-shifts")]
         public async Task<IActionResult> GetAllShifts(Guid id)
         {
@@ -119,6 +120,7 @@ namespace ServiceApothekeAPI.Controllers
             var shifts = await _pharmacistService.GetCompletedShifts(id);
             return Ok(shifts);
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProfile(Guid id)
         {
@@ -126,9 +128,8 @@ namespace ServiceApothekeAPI.Controllers
             {
                 var pharmacist = await _pharmacistService.GetById(id);
                 if (pharmacist == null)
-                    return NotFound("Pharmacist not found");
+                    return NotFound("Apotheker nicht gefunden");
 
-                // بنرجع بيانات الصيدلي كاملة عشان تظهر في البروفايل
                 return Ok(pharmacist);
             }
             catch (Exception ex)
@@ -136,15 +137,43 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpPost("forget-password")]
+        public async Task<IActionResult> ForgetPassword([FromBody] ForgetPasswordDto dto)
+        {
+            try
+            {
+                var result = await _authService.ForgetPharmacistPassword(dto.Email);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            try
+            {
+                var result = await _authService.ResetPharmacistPassword(dto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpPut("shifts/{shiftId}/complete")]
         public async Task<IActionResult> CompleteShift(Guid shiftId, [FromBody] CompleteShiftDto dto)
         {
             try
             {
                 var result = await _pharmacistService.CompleteShift(shiftId, dto);
-                if (!result) return NotFound("الشفت غير موجود");
+                if (!result) return NotFound("Schicht nicht gefunden");
 
-                return Ok("تم إنهاء الشفت بنجاح وإضافة الملاحظات");
+                return Ok("Schicht erfolgreich abgeschlossen und Notizen hinzugefügt");
             }
             catch (Exception ex)
             {

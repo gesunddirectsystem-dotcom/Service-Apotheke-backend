@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service_Apotheke.Repository.Job;
+
 namespace ServiceApothekeAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-          
     public class NotificationController : ControllerBase
     {
         private readonly IJobService _jobService;

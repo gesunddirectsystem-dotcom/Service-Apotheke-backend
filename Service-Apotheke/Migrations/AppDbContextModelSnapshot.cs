@@ -22,30 +22,7 @@ namespace Service_Apotheke.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.Admin", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Admins");
-                });
-
-            modelBuilder.Entity("ServiceApothekeAPI.Models.JobApplication", b =>
+            modelBuilder.Entity("JobApplication", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -74,7 +51,7 @@ namespace Service_Apotheke.Migrations
                     b.ToTable("JobApplications");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.JobPost", b =>
+            modelBuilder.Entity("JobPost", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -130,7 +107,7 @@ namespace Service_Apotheke.Migrations
                     b.ToTable("JobPosts");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.Notification", b =>
+            modelBuilder.Entity("Notification", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -163,7 +140,30 @@ namespace Service_Apotheke.Migrations
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.Pharmacist", b =>
+            modelBuilder.Entity("Service_Apotheke.Models.Admin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Admins");
+                });
+
+            modelBuilder.Entity("Service_Apotheke.Models.Pharmacist", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -258,7 +258,7 @@ namespace Service_Apotheke.Migrations
                     b.ToTable("Pharmacists");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.Pharmacy", b =>
+            modelBuilder.Entity("Service_Apotheke.Models.Pharmacy", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -322,7 +322,7 @@ namespace Service_Apotheke.Migrations
                     b.ToTable("Pharmacies");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.Shift", b =>
+            modelBuilder.Entity("Shift", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -361,15 +361,15 @@ namespace Service_Apotheke.Migrations
                     b.ToTable("Shifts");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.JobApplication", b =>
+            modelBuilder.Entity("JobApplication", b =>
                 {
-                    b.HasOne("ServiceApothekeAPI.Models.JobPost", "JobPost")
+                    b.HasOne("JobPost", "JobPost")
                         .WithMany("JobApplications")
                         .HasForeignKey("JobPostId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ServiceApothekeAPI.Models.Pharmacist", "Pharmacist")
+                    b.HasOne("Service_Apotheke.Models.Pharmacist", "Pharmacist")
                         .WithMany("JobApplications")
                         .HasForeignKey("PharmacistId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -380,9 +380,9 @@ namespace Service_Apotheke.Migrations
                     b.Navigation("Pharmacist");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.JobPost", b =>
+            modelBuilder.Entity("JobPost", b =>
                 {
-                    b.HasOne("ServiceApothekeAPI.Models.Pharmacy", "Pharmacy")
+                    b.HasOne("Service_Apotheke.Models.Pharmacy", "Pharmacy")
                         .WithMany("JobPosts")
                         .HasForeignKey("PharmacyId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -391,15 +391,15 @@ namespace Service_Apotheke.Migrations
                     b.Navigation("Pharmacy");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.Shift", b =>
+            modelBuilder.Entity("Shift", b =>
                 {
-                    b.HasOne("ServiceApothekeAPI.Models.JobPost", "JobPost")
+                    b.HasOne("JobPost", "JobPost")
                         .WithMany()
                         .HasForeignKey("JobPostId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ServiceApothekeAPI.Models.Pharmacist", "Pharmacist")
+                    b.HasOne("Service_Apotheke.Models.Pharmacist", "Pharmacist")
                         .WithMany("Shifts")
                         .HasForeignKey("PharmacistId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -410,19 +410,19 @@ namespace Service_Apotheke.Migrations
                     b.Navigation("Pharmacist");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.JobPost", b =>
+            modelBuilder.Entity("JobPost", b =>
                 {
                     b.Navigation("JobApplications");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.Pharmacist", b =>
+            modelBuilder.Entity("Service_Apotheke.Models.Pharmacist", b =>
                 {
                     b.Navigation("JobApplications");
 
                     b.Navigation("Shifts");
                 });
 
-            modelBuilder.Entity("ServiceApothekeAPI.Models.Pharmacy", b =>
+            modelBuilder.Entity("Service_Apotheke.Models.Pharmacy", b =>
                 {
                     b.Navigation("JobPosts");
                 });

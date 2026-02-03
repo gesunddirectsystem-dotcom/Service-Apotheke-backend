@@ -11,4 +11,11 @@
     string GenerateJwtToken(string userId, string userType, string email);
     string HashPassword(string password);
     bool VerifyPassword(string password, string hashedPassword);
+    // ===== Pharmacist =====
+    Task<string> ForgetPharmacistPassword(string email);
+    Task<string> ResetPharmacistPassword(ResetPasswordDto dto);
+
+    // ===== Pharmacy =====
+    Task<string> ForgetPharmacyPassword(string email);
+    Task<string> ResetPharmacyPassword(ResetPasswordDto dto);
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Service_Apotheke.Services.Email;
 using ServiceApothekeAPI.Data;
+using Service_Apotheke.Models;
 
 namespace Service_Apotheke.Repository.Job
 {
@@ -14,21 +15,22 @@ namespace Service_Apotheke.Repository.Job
             _context = context;
             _emailService = emailService;
         }
+
         public async Task<List<JobPost>> GetPharmacistAppliedJobs(Guid pharmacistId)
         {
             return await _context.JobPosts
-                .Include(jp => jp.JobApplications)
-                .Where(jp => jp.JobApplications.Any(ja => ja.PharmacistId == pharmacistId))
                 .Include(jp => jp.Pharmacy)
-                .OrderByDescending(jp => jp.ShiftDate)
+                .Where(jp => jp.JobApplications.Any(ja => ja.PharmacistId == pharmacistId))
                 .ToListAsync();
         }
+
         public async Task<JobPost> GetJobPostById(Guid id)
         {
             return await _context.JobPosts
-                .Include(jp => jp.Pharmacy) // مهم جداً عشان يعرض اسم الصيدلية وعنوانها
+                .Include(jp => jp.Pharmacy)
                 .FirstOrDefaultAsync(jp => jp.Id == id);
         }
+
         public async Task<bool> UpdateJobPostStatus(Guid id, string status)
         {
             var jobPost = await _context.JobPosts
@@ -37,7 +39,6 @@ namespace Service_Apotheke.Repository.Job
 
             if (jobPost == null) return false;
 
-            // لو عليه متقدمين مينفعش Active
             if (status == "Cancelled" && jobPost.JobApplications.Any(a => a.Status == "Accepted"))
                 throw new Exception("لا يمكن إلغاء الشيفت بعد قبول صيدلي");
 
@@ -48,10 +49,6 @@ namespace Service_Apotheke.Repository.Job
 
         public async Task<JobPost> CreateJobPost(CreateJobPostDto dto)
         {
-            var pharmacy = await _context.Pharmacies.FindAsync(dto.PharmacyId);
-            if (pharmacy == null)
-                throw new Exception("Pharmacy not found");
-
             var jobPost = new JobPost
             {
                 PharmacyId = dto.PharmacyId,
@@ -70,34 +67,22 @@ namespace Service_Apotheke.Repository.Job
 
             await _context.JobPosts.AddAsync(jobPost);
             await _context.SaveChangesAsync();
-
             return jobPost;
         }
 
         public async Task<string> ApplyForShift(ApplyDto dto)
         {
-            // Check if pharmacist exists and profile is completed
             var pharmacist = await _context.Pharmacists.FindAsync(dto.PharmacistId);
-            if (pharmacist == null)
-                throw new Exception("Pharmacist not found");
+            if (pharmacist == null) throw new Exception("Pharmacist not found");
+            if (!pharmacist.IsProfileCompleted) throw new Exception("Please complete your profile first");
 
-            if (!pharmacist.IsProfileCompleted)
-                throw new Exception("Please complete your profile first");
+            var jobPost = await _context.JobPosts.Include(jp => jp.Pharmacy).FirstOrDefaultAsync(jp => jp.Id == dto.JobPostId);
+            if (jobPost == null) throw new Exception("Job post not found");
 
-            // Check if job post exists
-            var jobPost = await _context.JobPosts
-                .Include(jp => jp.Pharmacy)
-                .FirstOrDefaultAsync(jp => jp.Id == dto.JobPostId);
-            if (jobPost == null)
-                throw new Exception("Job post not found");
-
-            // Check if already applied
             var existingApplication = await _context.JobApplications
-                .FirstOrDefaultAsync(ja => ja.JobPostId == dto.JobPostId && ja.PharmacistId == dto.PharmacistId);
-            if (existingApplication != null)
-                throw new Exception("Already applied for this shift");
+                .AnyAsync(ja => ja.JobPostId == dto.JobPostId && ja.PharmacistId == dto.PharmacistId);
+            if (existingApplication) throw new Exception("Already applied");
 
-            // Create application
             var application = new JobApplication
             {
                 JobPostId = dto.JobPostId,
@@ -107,22 +92,17 @@ namespace Service_Apotheke.Repository.Job
             };
 
             await _context.JobApplications.AddAsync(application);
-            await _context.SaveChangesAsync();
 
-            // Create notification for pharmacy
             var notification = new Notification
             {
                 UserId = jobPost.PharmacyId,
                 Title = "New Application",
-                Message = $"Pharmacist {pharmacist.FullName} applied for your shift on {jobPost.ShiftDate:yyyy-MM-dd}",
-                IsRead = false,
+                Message = $"Pharmacist {pharmacist.FullName} applied for {jobPost.ShiftDate:yyyy-MM-dd}",
                 CreatedAt = DateTime.UtcNow
             };
-
             await _context.Notifications.AddAsync(notification);
-            await _context.SaveChangesAsync();
 
-            // Send email notification to pharmacy
+            await _context.SaveChangesAsync();
             await _emailService.SendApplicationNotification(jobPost.Pharmacy.Email, pharmacist.FullName, jobPost.ShiftDate);
 
             return "Application submitted successfully";
@@ -132,20 +112,14 @@ namespace Service_Apotheke.Repository.Job
         {
             var application = await _context.JobApplications
                 .Include(ja => ja.JobPost)
-                .Include(ja => ja.Pharmacist)
                 .FirstOrDefaultAsync(ja => ja.Id == dto.ApplicationId);
 
-            if (application == null)
-                throw new Exception("Application not found");
-
-            if (dto.NewStatus != "Accepted" && dto.NewStatus != "Rejected")
-                throw new Exception("Invalid status");
+            if (application == null) throw new Exception("Application not found");
 
             application.Status = dto.NewStatus;
 
             if (dto.NewStatus == "Accepted")
             {
-                // Create shift record
                 var shift = new Shift
                 {
                     JobPostId = application.JobPostId,
@@ -153,26 +127,20 @@ namespace Service_Apotheke.Repository.Job
                     Status = "Scheduled",
                     CreatedAt = DateTime.UtcNow
                 };
-
                 await _context.Shifts.AddAsync(shift);
             }
 
-            await _context.SaveChangesAsync();
-
-            // Create notification for pharmacist
             var notification = new Notification
             {
                 UserId = application.PharmacistId,
                 Title = "Application Update",
-                Message = $"Your application for shift on {application.JobPost.ShiftDate:yyyy-MM-dd} has been {dto.NewStatus.ToLower()}",
-                IsRead = false,
+                Message = $"Your application for {application.JobPost.ShiftDate:yyyy-MM-dd} was {dto.NewStatus}",
                 CreatedAt = DateTime.UtcNow
             };
-
             await _context.Notifications.AddAsync(notification);
-            await _context.SaveChangesAsync();
 
-            return $"Application {dto.NewStatus.ToLower()} successfully";
+            await _context.SaveChangesAsync();
+            return $"Application {dto.NewStatus} successfully";
         }
 
         public async Task<List<JobPost>> GetPharmacyJobPosts(Guid pharmacyId)
@@ -186,6 +154,7 @@ namespace Service_Apotheke.Repository.Job
         public async Task<List<JobPost>> GetActiveJobPosts()
         {
             return await _context.JobPosts
+                .Include(jp => jp.Pharmacy)
                 .Where(jp => jp.Status == "Active" && jp.ShiftDate >= DateTime.UtcNow.Date)
                 .OrderBy(jp => jp.ShiftDate)
                 .ToListAsync();
@@ -193,47 +162,39 @@ namespace Service_Apotheke.Repository.Job
 
         public async Task<List<object>> GetPharmacistApplications(Guid pharmacistId)
         {
-            var applications = await _context.JobApplications
+            return await _context.JobApplications
                 .Where(ja => ja.PharmacistId == pharmacistId)
                 .Include(ja => ja.JobPost)
-                    .ThenInclude(jp => jp.Pharmacy)
-                .OrderByDescending(ja => ja.AppliedAt)
+                .ThenInclude(jp => jp.Pharmacy)
                 .Select(ja => new
                 {
-                    ja.Id, // Application ID
+                    ja.Id,
                     ja.Status,
                     ja.AppliedAt,
-                    JobPostId = ja.JobPostId,
-                    ShiftDate = ja.JobPost.ShiftDate,
-                    StartTime = ja.JobPost.StartTime,
-                    EndTime = ja.JobPost.EndTime,
-                    PharmacyId = ja.JobPost.PharmacyId,
-                    PharmacyName = ja.JobPost.Pharmacy.PharmacyName
+                    ja.JobPostId,
+                    ja.JobPost.ShiftDate,
+                    ja.JobPost.Pharmacy.PharmacyName
                 })
+                .Cast<object>()
                 .ToListAsync();
-
-            return applications.Cast<object>().ToList();
         }
-
 
         public async Task<List<object>> GetJobPostApplications(Guid jobPostId)
         {
-            var applications = await _context.JobApplications
+            return await _context.JobApplications
                 .Where(ja => ja.JobPostId == jobPostId)
                 .Include(ja => ja.Pharmacist)
                 .Select(ja => new {
                     ja.Id,
                     ja.Status,
                     ja.AppliedAt,
-                    PharmacistId = ja.PharmacistId,
-                    PharmacistName = ja.Pharmacist.FullName,
-                    PharmacistPhone = ja.Pharmacist.Phone
+                    ja.Pharmacist.FullName,
+                    ja.Pharmacist.CvPath,
+                    ja.Pharmacist.Phone
                 })
+                .Cast<object>()
                 .ToListAsync();
-
-            return applications.Cast<object>().ToList();
         }
-
 
         public async Task<List<Notification>> GetUserNotifications(Guid userId)
         {
@@ -246,9 +207,7 @@ namespace Service_Apotheke.Repository.Job
         public async Task<bool> MarkNotificationAsRead(int notificationId)
         {
             var notification = await _context.Notifications.FindAsync(notificationId);
-            if (notification == null)
-                return false;
-
+            if (notification == null) return false;
             notification.IsRead = true;
             await _context.SaveChangesAsync();
             return true;

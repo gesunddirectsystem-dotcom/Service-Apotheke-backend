@@ -4,6 +4,11 @@ public class CompleteShiftDto
 {
     public string PharmacistNotes { get; set; } = string.Empty;
 }
+public class UploadCvDto
+{
+    [Required]
+    public IFormFile File { get; set; }
+}
 public class PharmacistLoginResponseDto
     {
         public Guid Id { get; set; }

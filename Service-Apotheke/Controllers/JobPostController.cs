@@ -7,7 +7,6 @@ namespace ServiceApothekeAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-          
     public class JobPostController : ControllerBase
     {
         private readonly IJobService _jobService;
@@ -44,6 +43,7 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         [HttpGet("applicant/{pharmacistId}")]
         public async Task<IActionResult> GetPharmacistAppliedJobs(Guid pharmacistId)
         {
@@ -57,13 +57,14 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetJobPostById(Guid id)
         {
             try
             {
                 var result = await _jobService.GetJobPostById(id);
-                if (result == null) return NotFound("الشيفت غير موجود");
+                if (result == null) return NotFound("Schicht nicht gefunden");
                 return Ok(result);
             }
             catch (Exception ex)
@@ -71,23 +72,24 @@ namespace ServiceApothekeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateJobPostStatus(Guid id, [FromBody] UpdateStatusDto dto)
         {
             try
             {
-                // بننادي الخدمة مش قاعدة البيانات مباشرة
                 var result = await _jobService.UpdateJobPostStatus(id, dto.Status);
 
-                if (!result) return NotFound("الشيفت غير موجود");
+                if (!result) return NotFound("Schicht nicht gefunden");
 
-                return Ok("تم تحديث الحالة بنجاح");
+                return Ok("Status erfolgreich aktualisiert");
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
         }
+
         [HttpGet("active")]
         public async Task<IActionResult> GetActiveJobPosts()
         {
